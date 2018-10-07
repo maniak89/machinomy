@@ -2,8 +2,19 @@ import * as Datastore from 'nedb'
 import IEngine from '../IEngine'
 import IExec from '../IExec'
 import NedbDatastore from './NedbDatastore'
+import ITransaction from '../ITransaction'
 
 let db = new Map<string, NedbDatastore>()
+
+class EmptyTransaction implements ITransaction {
+  async commit (): Promise<void> {
+    return
+  }
+  async rollback (): Promise<void> {
+    return
+  }
+
+}
 
 export default class EngineNedb implements IEngine, IExec<NedbDatastore> {
   datastore: NedbDatastore
@@ -39,5 +50,9 @@ export default class EngineNedb implements IEngine, IExec<NedbDatastore> {
 
   async exec <B> (fn: (client: NedbDatastore) => B): Promise<B> {
     return fn(this.datastore)
+  }
+
+  async execTransaction (callback: (transaction: ITransaction) => Promise<void>): Promise<void> {
+    return callback(new EmptyTransaction())
   }
 }

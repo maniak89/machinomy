@@ -1,13 +1,15 @@
 import IExec from '../IExec'
 import IEngine from '../IEngine'
+import ITransaction from '../ITransaction'
 import * as fs from 'fs'
-import * as sqlite from 'sqlite3'
+import * as sqlite from 'better-sqlite3'
 import SqliteDatastore from './SqliteDatastore'
+import SqliteTransaction from './SqliteTransaction'
 
 let db = new Map<string, SqliteDatastore>()
 
 export default class EngineSqlite implements IEngine, IExec<SqliteDatastore> {
-  private readonly datastore: SqliteDatastore
+  protected datastore: SqliteDatastore
 
   constructor (url: string) {
     if (url.startsWith('sqlite://')) {
@@ -17,7 +19,7 @@ export default class EngineSqlite implements IEngine, IExec<SqliteDatastore> {
     if (found) {
       this.datastore = found
     } else {
-      this.datastore = new SqliteDatastore(new sqlite.Database(url))
+      this.datastore = new SqliteDatastore(sqlite(url))
       db.set(url, this.datastore)
     }
   }
@@ -47,5 +49,10 @@ export default class EngineSqlite implements IEngine, IExec<SqliteDatastore> {
 
   async exec <B> (fn: (client: SqliteDatastore) => B): Promise<B> {
     return fn(this.datastore)
+  }
+
+  async execTransaction (callback: (transaction: ITransaction) => Promise<void>): Promise<void> {
+    const result = new SqliteTransaction(this.datastore, callback)
+    return result.run()
   }
 }

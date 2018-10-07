@@ -52,7 +52,7 @@ describe('Storage', () => {
   })
 
   context('for Sqlite', async () => {
-    const url = 'sqlite://'
+    const url = 'sqlite://storage.test.db'
 
     specify('provide Sqlite databases', async () => {
       const storage = await Storage.build(url, inflator)

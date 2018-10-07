@@ -6,6 +6,7 @@ import ChannelId from '../ChannelId'
 import IChannelsDatabase from './IChannelsDatabase'
 import Logger from '@machinomy/logger'
 import ChannelInflator from '../ChannelInflator'
+import ITransaction from './ITransaction'
 
 const LOG = new Logger('abstract-channels-database')
 
@@ -43,27 +44,27 @@ export default abstract class AbstractChannelsDatabase<T extends IEngine> implem
     return channels.filter((chan: PaymentChannel) => chan ? chan.state === state : false)
   }
 
-  abstract save (paymentChannel: PaymentChannel): Promise<void>
+  abstract save (paymentChannel: PaymentChannel, transaction?: ITransaction): Promise<void>
 
-  saveOrUpdate (paymentChannel: PaymentChannel): Promise<void> {
+  saveOrUpdate (paymentChannel: PaymentChannel, transaction?: ITransaction): Promise<void> {
     LOG.info(`Saving or updating channel with ID ${paymentChannel.channelId.toString()}`)
 
     return this.firstById(paymentChannel.channelId).then((found: PaymentChannel | null) => {
       if (found) {
         LOG.info(`Spending channel with ID ${paymentChannel.channelId.toString()}`)
-        return this.spend(paymentChannel.channelId, paymentChannel.spent)
+        return this.spend(paymentChannel.channelId, paymentChannel.spent, transaction)
       } else {
         LOG.info(`Spending channel with ID ${paymentChannel.channelId.toString()}`)
-        return this.save(paymentChannel)
+        return this.save(paymentChannel, transaction)
       }
     })
   }
 
-  abstract deposit (channelId: ChannelId | string, value: BigNumber.BigNumber): Promise<void>
+  abstract deposit (channelId: ChannelId | string, value: BigNumber.BigNumber, transaction?: ITransaction): Promise<void>
 
   abstract firstById (channelId: ChannelId | string): Promise<PaymentChannel | null>
 
-  abstract spend (channelId: ChannelId | string, spent: BigNumber.BigNumber): Promise<void>
+  abstract spend (channelId: ChannelId | string, spent: BigNumber.BigNumber, transaction?: ITransaction): Promise<void>
 
   abstract all (): Promise<Array<PaymentChannel>>
 
@@ -80,5 +81,5 @@ export default abstract class AbstractChannelsDatabase<T extends IEngine> implem
 
   abstract findBySenderReceiverChannelId (sender: string, receiver: string, channelId: ChannelId | string): Promise<PaymentChannel | null>
 
-  abstract updateState (channelId: ChannelId | string, state: number): Promise<void>
+  abstract updateState (channelId: ChannelId | string, state: number, transaction?: ITransaction): Promise<void>
 }

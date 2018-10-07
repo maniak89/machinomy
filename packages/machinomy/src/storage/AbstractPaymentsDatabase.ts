@@ -3,6 +3,7 @@ import { namespaced } from '../util/namespaced'
 import IEngine from './IEngine'
 import IPaymentsDatabase from './IPaymentsDatabase'
 import ChannelId from '../ChannelId'
+import ITransaction from './ITransaction'
 
 export default abstract class AbstractPaymentsDatabase<T extends IEngine> implements IPaymentsDatabase {
   kind: string
@@ -22,7 +23,7 @@ export default abstract class AbstractPaymentsDatabase<T extends IEngine> implem
     return PaymentSerde.instance.deserialize(json)
   }
 
-  abstract save (token: string, payment: Payment): Promise<void>
+  abstract save (token: string, payment: Payment, transaction?: ITransaction): Promise<void>
 
   abstract firstMaximum (channelId: ChannelId | string): Promise<Payment | any>
 

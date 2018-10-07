@@ -2,20 +2,21 @@ import AbstractTokensDatabase from '../AbstractTokensDatabase'
 import EngineSqlite from './EngineSqlite'
 import ChannelId from '../../ChannelId'
 import SqliteDatastore from './SqliteDatastore'
+import ITransaction from '../ITransaction'
 
 async function createTable (client: SqliteDatastore) {
   await client.run('CREATE TABLE IF NOT EXISTS token (token TEXT, "channelId" TEXT, kind TEXT)')
 }
 
 export default class SqliteTokensDatabase extends AbstractTokensDatabase<EngineSqlite> {
-  async save (token: string, channelId: ChannelId | string): Promise<void> {
+  async save (token: string, channelId: ChannelId | string, transaction?: ITransaction): Promise<void> {
     return this.engine.exec(async client => {
       await createTable(client)
-      return client.run('INSERT INTO token(token, "channelId", kind) VALUES ($token, $channelId, $kind)',
+      return client.run('INSERT INTO token(token, "channelId", kind) VALUES (@token, @channelId, @kind)',
         {
-          $token: token,
-          $channelId: channelId.toString(),
-          $kind: this.kind
+          token: token,
+          channelId: channelId.toString(),
+          kind: this.kind
         })
     })
   }
@@ -24,9 +25,9 @@ export default class SqliteTokensDatabase extends AbstractTokensDatabase<EngineS
     return this.engine.exec(async client => {
       await createTable(client)
 
-      let rows = await client.get<any>('SELECT COUNT(*) as count FROM token WHERE token=$token',
+      let rows = await client.get<any>('SELECT COUNT(*) as count FROM token WHERE token=@token',
         {
-          $token: token
+          token: token
         })
       return rows ? rows.count > 0 : false
     })

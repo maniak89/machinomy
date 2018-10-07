@@ -20,6 +20,7 @@ import IChannelManager from './IChannelManager'
 import ChannelManager from './ChannelManager'
 import * as expect from 'expect'
 import Signature from './Signature'
+import IEngine from './storage/IEngine'
 
 describe('ChannelManager', () => {
   const fakeChan = new PaymentChannel('0xcafe', '0xbeef', '123', new BigNumber.BigNumber(10), new BigNumber.BigNumber(0), 0, '')
@@ -45,6 +46,8 @@ describe('ChannelManager', () => {
   let channelManager: IChannelManager
 
   let paymentManager: PaymentManager
+
+  let engine: IEngine
 
   let deployed: any
 
@@ -72,6 +75,7 @@ describe('ChannelManager', () => {
     tokensDao = {} as TokensDatabase
     channelsDao = {} as IChannelsDatabase
     paymentManager = {} as PaymentManager
+    engine = {} as IEngine
 
     machOpts = {
       settlementPeriod: ChannelManager.DEFAULT_SETTLEMENT_PERIOD + 1,
@@ -84,7 +88,7 @@ describe('ChannelManager', () => {
     const channelTokenContract = {} as ChannelTokenContract
     const chainCache = new ChainCache(undefined)
     channelContract = new ChannelContract(web3, channelsDao, channelEthContract, channelTokenContract)
-    channelManager = new ChannelManager('0xcafe', web3, channelsDao, paymentsDao, tokensDao, channelContract, paymentManager, chainCache, machOpts)
+    channelManager = new ChannelManager('0xcafe', web3, channelsDao, paymentsDao, tokensDao, channelContract, paymentManager, chainCache, machOpts, engine)
     channelEthContract.getSettlementPeriod = sinon.stub().resolves(ChannelManager.DEFAULT_SETTLEMENT_PERIOD)
     channelTokenContract.getSettlementPeriod = sinon.stub().resolves(ChannelManager.DEFAULT_SETTLEMENT_PERIOD)
   })
@@ -461,6 +465,7 @@ describe('ChannelManager', () => {
       tokensDao.save = sinon.stub().withArgs('token', payment.channelId).resolves()
       paymentsDao.save = sinon.stub().withArgs('token', payment).resolves()
       paymentManager.isValid = sinon.stub().resolves(true)
+      engine.execTransaction = sinon.stub().resolves()
 
       return channelManager.acceptPayment(payment).then((token: string) => {
         expect(token).toBe('token')
@@ -492,6 +497,7 @@ describe('ChannelManager', () => {
       channelContract.channelById = sinon.stub().resolves([fakeChan.sender, fakeChan.receiver, fakeChan.value, ChannelManager.DEFAULT_SETTLEMENT_PERIOD, 0])
       channelsDao.updateState = sinon.stub().resolves()
       channelsDao.firstById = sinon.stub().withArgs(newChan.channelId).resolves(newChan)
+      engine.execTransaction = sinon.stub().resolves()
 
       return expectsRejection(channelManager.acceptPayment(payment))
         .then(() => ({ signature, newChan }))

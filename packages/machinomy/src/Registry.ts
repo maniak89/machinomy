@@ -87,7 +87,7 @@ export default class Registry {
     let channelContract = await this.channelContract()
     let paymentManager = await this.paymentManager()
     let chainCache = await this.chainCache()
-    return new ChannelManager(this.account, this.web3, channels, payments, tokens, channelContract, paymentManager, chainCache, this.options)
+    return new ChannelManager(this.account, this.web3, channels, payments, tokens, channelContract, paymentManager, chainCache, this.options, storage.engine)
   }
 
   @memoize

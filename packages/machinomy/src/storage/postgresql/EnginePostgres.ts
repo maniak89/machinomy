@@ -1,6 +1,8 @@
 import IEngine from '../IEngine'
 import * as pg from 'pg'
 import IExec from '../IExec'
+import PostgresTransaction from './PostgresTransaction'
+import ITransaction from '../ITransaction'
 
 export default class EnginePostgres implements IEngine, IExec<pg.Client> {
   private readonly url?: string
@@ -61,5 +63,11 @@ export default class EnginePostgres implements IEngine, IExec<pg.Client> {
     })
 
     return this.connectionInProgress
+  }
+
+  async execTransaction (callback: (transaction: ITransaction) => Promise<void>): Promise<void> {
+    let client = await this.ensureConnection()
+    const result = new PostgresTransaction(client)
+    await result.run()
   }
 }

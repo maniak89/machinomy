@@ -20,6 +20,7 @@ import * as uuid from 'uuid'
 import { PaymentNotValidError, InvalidChannelError } from './Exceptions'
 import { RemoteChannelInfo } from './RemoteChannelInfo'
 import { recoverPersonalSignature } from 'eth-sig-util'
+import IEngine from './storage/IEngine'
 
 const LOG = new Logger('channel-manager')
 
@@ -49,7 +50,9 @@ export default class ChannelManager extends EventEmitter implements IChannelMana
 
   private machinomyOptions: MachinomyOptions
 
-  constructor (account: string, web3: Web3, channelsDao: IChannelsDatabase, paymentsDao: IPaymentsDatabase, tokensDao: ITokensDatabase, channelContract: ChannelContract, paymentManager: PaymentManager, chainCache: ChainCache, machinomyOptions: MachinomyOptions) {
+  private storageEngine: IEngine
+
+  constructor (account: string, web3: Web3, channelsDao: IChannelsDatabase, paymentsDao: IPaymentsDatabase, tokensDao: ITokensDatabase, channelContract: ChannelContract, paymentManager: PaymentManager, chainCache: ChainCache, machinomyOptions: MachinomyOptions, storageEngine: IEngine) {
     super()
     this.account = account
     this.web3 = web3
@@ -60,6 +63,7 @@ export default class ChannelManager extends EventEmitter implements IChannelMana
     this.paymentManager = paymentManager
     this.machinomyOptions = machinomyOptions
     this.chainCache = chainCache
+    this.storageEngine = storageEngine
   }
   openChannel (sender: string, receiver: string, amount: BigNumber.BigNumber, minDepositAmount?: BigNumber.BigNumber, channelId?: ChannelId | string, tokenContract?: string): Promise<PaymentChannel> {
     return this.mutex.synchronize(() => this.internalOpenChannel(sender, receiver, amount, minDepositAmount, channelId, tokenContract))
@@ -130,9 +134,11 @@ export default class ChannelManager extends EventEmitter implements IChannelMana
       if (valid) {
         channel.spent = payment.value
         const token = this.web3.sha3(JSON.stringify(payment)).toString()
-        await this.channelsDao.saveOrUpdate(channel)
-        await this.tokensDao.save(token, payment.channelId)
-        await this.paymentsDao.save(token, payment)
+        await this.storageEngine.execTransaction(async (transaction) => {
+          await this.channelsDao.saveOrUpdate(channel, transaction)
+          await this.tokensDao.save(token, payment.channelId, transaction)
+          await this.paymentsDao.save(token, payment, transaction)
+        })
         return token
       }
 

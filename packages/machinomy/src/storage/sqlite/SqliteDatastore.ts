@@ -1,41 +1,29 @@
-import * as sqlite3 from 'sqlite3'
+import * as sqlite from 'better-sqlite3'
 
 export default class SqliteDatastore {
-  database: sqlite3.Database
+  database: sqlite
 
-  constructor (database: sqlite3.Database) {
+  constructor (database: sqlite) {
     this.database = database
+    this.database.pragma('journal_mode = WAL')
   }
 
-  run (query: string, params?: any): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.database.run(query, params, error => {
-        error ? reject(error) : resolve()
-      })
-    })
+  async run (query: string, params?: any): Promise<void> {
+    const st = this.database.prepare(query)
+    params ? st.run(params) : st.run()
   }
 
-  close (): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-      this.database.close(error => {
-        error ? reject(error) : resolve()
-      })
-    })
+  async close (): Promise<void> {
+    this.database.close()
   }
 
-  get <A> (query: string, params?: any): Promise<A | null> {
-    return new Promise<A>((resolve, reject) => {
-      this.database.get(query, params, (error, row) => {
-        error ? reject(error) : resolve(row)
-      })
-    })
+  async get <A> (query: string, params?: any): Promise<A | null> {
+    const st = this.database.prepare(query)
+    return params ? st.get(params) : st.get()
   }
 
-  all <A> (query: string, params?: any): Promise<Array<A>> {
-    return new Promise<Array<A>>((resolve, reject) => {
-      this.database.all(query, params, (error, rows) => {
-        error ? reject(error) : resolve(rows)
-      })
-    })
+  async all <A> (query: string, params?: any): Promise<Array<A>> {
+    const st = this.database.prepare(query)
+    return params ? st.all(params) : st.all()
   }
 }
