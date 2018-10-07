@@ -3,10 +3,9 @@ import * as BigNumber from 'bignumber.js'
 import { PaymentChannel, PaymentChannelJSON } from '../../PaymentChannel'
 import EngineSqlite from './EngineSqlite'
 import AbstractChannelsDatabase from '../AbstractChannelsDatabase'
-import ITransaction from '../ITransaction'
 
 export default class SqliteChannelsDatabase extends AbstractChannelsDatabase<EngineSqlite> {
-  async save (paymentChannel: PaymentChannel, transaction?: ITransaction): Promise<void> {
+  async save (paymentChannel: PaymentChannel): Promise<void> {
     return this.engine.exec(async client => {
       await client.run(
         'INSERT INTO channel("channelId", kind, sender, receiver, value, spent, state, "tokenContract") ' +
@@ -36,7 +35,7 @@ export default class SqliteChannelsDatabase extends AbstractChannelsDatabase<Eng
     })
   }
 
-  async spend (channelId: ChannelId | string, spent: BigNumber.BigNumber, transaction?: ITransaction): Promise<void> {
+  async spend (channelId: ChannelId | string, spent: BigNumber.BigNumber): Promise<void> {
     return this.engine.exec(async client => {
       return client.run(
         'UPDATE channel SET spent = @spent WHERE "channelId" = @channelId',
@@ -47,7 +46,7 @@ export default class SqliteChannelsDatabase extends AbstractChannelsDatabase<Eng
     })
   }
 
-  async deposit (channelId: ChannelId | string, value: BigNumber.BigNumber, transaction?: ITransaction): Promise<void> {
+  async deposit (channelId: ChannelId | string, value: BigNumber.BigNumber): Promise<void> {
     return this.engine.exec(async client => {
       let channel = await this.firstById(channelId)
       if (!channel) {
@@ -127,7 +126,7 @@ export default class SqliteChannelsDatabase extends AbstractChannelsDatabase<Eng
     })
   }
 
-  async updateState (channelId: ChannelId | string, state: number, transaction?: ITransaction): Promise<void> {
+  async updateState (channelId: ChannelId | string, state: number): Promise<void> {
     return this.engine.exec(async client => {
       return client.run('UPDATE channel SET state = @state WHERE "channelId" = @channelId',
         {

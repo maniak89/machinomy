@@ -3,7 +3,6 @@ import EngineSqlite from './EngineSqlite'
 import ChannelId from '../../ChannelId'
 import Payment, { PaymentJSON, PaymentSerde } from '../../payment'
 import SqliteDatastore from './SqliteDatastore'
-import ITransaction from '../ITransaction'
 
 async function createTable (client: SqliteDatastore) {
   await client.run('CREATE TABLE IF NOT EXISTS payment ("channelId" TEXT, kind TEXT, token TEXT, sender TEXT, receiver TEXT,' +
@@ -11,7 +10,7 @@ async function createTable (client: SqliteDatastore) {
 }
 
 export default class SqlitePaymentsDatabase extends AbstractPaymentsDatabase<EngineSqlite> {
-  async save (token: string, payment: Payment, transaction?: ITransaction): Promise<void> {
+  async save (token: string, payment: Payment): Promise<void> {
     return this.engine.exec(async client => {
       await createTable(client)
       const serialized: any = PaymentSerde.instance.serialize(payment)
